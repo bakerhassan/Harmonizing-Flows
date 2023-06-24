@@ -1,5 +1,7 @@
 
 import os
+from multiprocessing import freeze_support
+
 from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn
@@ -8,28 +10,29 @@ import random
 import numpy as np
 import os
 import torch.nn.functional as F
+
+import globals
 from harmonizer_dataloader import MedicalImage2DDataset
 from harmonizer_model import Harmonizer
 from progressBar import printProgressBar
 
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-print('-' * 40)
-print('~~~~~~~~  Starting the training... ~~~~~~')
-print('-' * 40)
+if __name__ == '__main__':
+    freeze_support()
+    os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-lr = 0.001
-epoch = 200 
-seed = 42
+    print('-' * 40)
+    print('~~~~~~~~  Starting the training... ~~~~~~')
+    print('-' * 40)
 
-root_dir = '../data/'
-df_root_dir = '../data/'
-modelName = 'UNet2D_harmonizer'
+    lr = 0.001
+    epoch = 200
+    seed = 42
+    modelName = 'UNet2D_harmonizer'
 
-for site in ['PITT', 'NYU', 'CALTECH', 'KKI']:
 
-    main_dir = f'../checkpoints/UNet2D_harmonizer_{site}/'
+    main_dir = f'../checkpoints/UNet2D_harmonizer/'
     model_dir = main_dir + 'model/'
 
     # set random seed for all gpus
@@ -40,11 +43,11 @@ for site in ['PITT', 'NYU', 'CALTECH', 'KKI']:
     torch.cuda.manual_seed_all(seed)
 
 
-    train_set = MedicalImage2DDataset('train', site, root_dir, df_root_path=df_root_dir)
-    train_loader = DataLoader(train_set, batch_size=32, shuffle=True, num_workers=4)
+    train_set = MedicalImage2DDataset('train',  globals.affine_file,globals.training_data_location)
+    train_loader = DataLoader(train_set, batch_size=32, shuffle=True)
 
-    val_set = MedicalImage2DDataset('val', site, root_dir, df_root_path=df_root_dir)
-    val_loader = DataLoader(val_set, batch_size=32, shuffle=False, num_workers=4)
+    val_set = MedicalImage2DDataset('val',  globals.affine_file,globals.validation_data_location)
+    val_loader = DataLoader(val_set, batch_size=32, shuffle=False)
 
 
 
@@ -66,7 +69,7 @@ for site in ['PITT', 'NYU', 'CALTECH', 'KKI']:
         netG = nn.DataParallel(netG)
         MSE_loss.cuda()
 
-        
+
     optimizerG = torch.optim.Adam(netG.parameters(), lr=lr, betas=(0.9, 0.99), amsgrad=False)
 
 
@@ -79,9 +82,9 @@ for site in ['PITT', 'NYU', 'CALTECH', 'KKI']:
 
     for i in range(epoch):
         loss_total = []
-        
+
         for j, data in enumerate(train_loader):
-            
+
             image = data[0]
             orig_image = data[1]
 
@@ -89,7 +92,7 @@ for site in ['PITT', 'NYU', 'CALTECH', 'KKI']:
             optimizerG.zero_grad()
             MRI = to_var(image)
             orig_image = to_var(orig_image)
-            
+
             ################### Train ###################
             netG.zero_grad()
 
@@ -97,11 +100,11 @@ for site in ['PITT', 'NYU', 'CALTECH', 'KKI']:
             multiTask = False
 
             reconstructed_image = netG(MRI)
-            
+
             loss = MSE_loss(reconstructed_image, orig_image)
             loss.backward()
             optimizerG.step()
-                
+
             loss_total.append(loss.cpu().data.numpy())
 
             printProgressBar(j, len(train_loader),
@@ -132,7 +135,7 @@ for site in ['PITT', 'NYU', 'CALTECH', 'KKI']:
             optimizerG.zero_grad()
             MRI = to_var(image)
             orig_image = to_var(orig_image)
-            
+
             ################### Train ###################
             netG.zero_grad()
             reconstructed_image = netG(MRI)
@@ -174,5 +177,3 @@ for site in ['PITT', 'NYU', 'CALTECH', 'KKI']:
         if i % 30 == 29 :
             for param_group in optimizerG.param_groups:
                     param_group['lr'] = lr/2
-
-
