@@ -13,7 +13,7 @@ import torch.nn.functional as F
 from globals import globals
 from .harmonizer_dataloader import MedicalImage2DDataset
 from .harmonizer_model import Harmonizer
-from progressBar import printProgressBar
+from .progressBar import printProgressBar
 
 if __name__ == '__main__':
     freeze_support()
