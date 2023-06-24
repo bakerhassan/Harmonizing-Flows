@@ -11,7 +11,7 @@ import numpy as np
 import os
 import torch.nn.functional as F
 
-import globals
+from .. import globals
 from harmonizer_dataloader import MedicalImage2DDataset
 from harmonizer_model import Harmonizer
 from progressBar import printProgressBar
