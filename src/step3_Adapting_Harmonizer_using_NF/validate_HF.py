@@ -64,8 +64,8 @@ for source_site in sites:
             param.requires_grad = False
         model.harmonizer.eval()
             
-        root_dir = '../data/'
-        df_root_dir = '../data/'
+        root_dir = '../../data/'
+        df_root_dir = '../../data/'
         test_set = MedicalImage2DDataset('test', target_site, root_dir, df_root_path=df_root_dir)
         test_loader = DataLoader(test_set, batch_size=16, num_workers=4, shuffle=True)
         

@@ -11,5 +11,6 @@ else:
     lustre_path = '/Users/hassan/Downloads/Caltech/derivative'
     training_data_location = '/Users/hassan/Downloads/Caltech/derivative/normal/training'
     validation_data_location = '/Users/hassan/Downloads/Caltech/derivative/normal/validation/'
-    affine_file = '../affine.npy'
+    affine_file = '../../affine.npy'
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+slice_size = (224, 224)

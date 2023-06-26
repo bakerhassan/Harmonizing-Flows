@@ -1,7 +1,4 @@
-from operator import index
-import os
 import torch
-import pandas as pd
 import numpy as np
 from torch.utils.data import Dataset
 import imgaug.augmenters as iaa
@@ -9,8 +6,10 @@ import warnings
 
 import os
 import nibabel as nib
-from nilearn.image import resample_img, crop_img, index_img
+from nilearn.image import resample_img, crop_img
 from skimage import transform
+
+from ..globals import globals
 
 warnings.filterwarnings("ignore")
 
@@ -77,7 +76,7 @@ class MedicalImage2DDataset(Dataset):
 
     def __getitem__(self, index):
         img = np.squeeze(self.items[index])
-        img = transform.resize(img, (240, 240), anti_aliasing=True)
+        img = transform.resize(img, globals.slice_size, anti_aliasing=True)
         img /= img.max()
         img *= 255
         img = img.astype(np.uint8)

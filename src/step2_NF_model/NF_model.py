@@ -3,14 +3,12 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.utils.data as data
 import torch.optim as optim
 # PyTorch Lightning
 import pytorch_lightning as pl
 
 import numpy as np
-
-
+import globals
 
 
 class ImageFlow(pl.LightningModule):
@@ -22,7 +20,6 @@ class ImageFlow(pl.LightningModule):
             import_samples - Number of importance samples to use during testing (see explanation below). Can be changed at any time
         """
         super().__init__()
-        self.device = torch.device("cuda:0")
         self.flows = nn.ModuleList(flows)
         self.import_samples = import_samples
         # Create prior distribution for final latent space
@@ -372,7 +369,7 @@ class SqueezeFlow(nn.Module):
 
 
 def create_multiscale_flow_variational():
-    device = torch.device("cuda:0")
+    device = globals.device
     flow_layers = []
 
     vardeq_layers = [CouplingLayer(network=UNet(2, c_out=2),

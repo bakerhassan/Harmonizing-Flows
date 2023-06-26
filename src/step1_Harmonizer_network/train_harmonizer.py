@@ -1,4 +1,3 @@
-import os
 from multiprocessing import freeze_support
 
 from torch.utils.data import DataLoader
@@ -8,12 +7,11 @@ from torch.autograd import Variable
 import random
 import numpy as np
 import os
-import torch.nn.functional as F
 
-from globals import globals
+import globals
 from .harmonizer_dataloader import MedicalImage2DDataset
-from .harmonizer_model import Harmonizer
-from .progressBar import printProgressBar
+from harmonizer_model import Harmonizer
+from progressBar import printProgressBar
 
 if __name__ == '__main__':
     freeze_support()

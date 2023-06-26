@@ -1,21 +1,15 @@
 ###The basline of the codes are adapted from https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial11/NF_image_modeling.html
 
+import globals
 
 ## Standard libraries
 import os
-import math
 import time
-import numpy as np
+from torch.utils.data import DataLoader
 
 ## Progress bar
-from tqdm.notebook import tqdm
-
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.utils.data as data
-import torch.optim as optim
 # PyTorch Lightning
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
@@ -36,17 +30,17 @@ print("Using device", device)
 
 for site in ['CALTECH', 'KKI', 'PITT', 'NYU']:
 
-    root_dir = '../data/'
-    df_root_dir = '../data/'
+    root_dir = '../../data/'
+    df_root_dir = '../../data/'
     CHECKPOINT_PATH = f'../checkpoints/ABIDE-FLOW-{site}'
 
 
 
-    train_set = MedicalImage2DDataset('train', site, root_dir, df_root_path=df_root_dir, full=True)
-    train_loader = data.DataLoader(train_set, batch_size=24, shuffle=True, pin_memory=True, num_workers=8)
+    train_set = MedicalImage2DDataset('train', globals.affine_file, globals.training_data_location)
+    train_loader = DataLoader(train_set, batch_size=32, shuffle=True)
 
-    val_set = MedicalImage2DDataset('val', site, root_dir, df_root_path=df_root_dir, full=True)
-    val_loader = data.DataLoader(val_set, batch_size=24, shuffle=False, pin_memory=True, num_workers=8)
+    val_set = MedicalImage2DDataset('val', globals.affine_file, globals.validation_data_location)
+    val_loader = DataLoader(val_set, batch_size=32, shuffle=False)
 
     class PrintCallback(Callback):
         def on_epoch_end(self, trainer, pl_module):
@@ -55,8 +49,6 @@ for site in ['CALTECH', 'KKI', 'PITT', 'NYU']:
     def train_flow(flow, model_name="ABIDE-Guided-Flow-variational"):
         # Create a PyTorch Lightning trainer
         trainer = pl.Trainer(default_root_dir=os.path.join(CHECKPOINT_PATH, model_name),
-                            gpus=1 if torch.cuda.is_available() else 0,
-                            #accelerator='dp',
                             max_epochs=1600,
                             gradient_clip_val=1.0,
                             callbacks=[PrintCallback(),

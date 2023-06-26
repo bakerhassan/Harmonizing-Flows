@@ -17,8 +17,8 @@ class Test_Dataset(Dataset):
 
     def __init__(self, site, image_id, full=True):
         
-        self.root_dir = '../data'
-        df_root_dir = '../data/'
+        self.root_dir = '../../data'
+        df_root_dir = '../../data/'
         df = pd.read_csv(f'{df_root_dir}/ABIDE-slices-test-dataframe.csv', index_col=0)
         df = df.query('SITE==@site').reset_index(drop=True)
         self.sub_df = df.query('FILE_ID==@image_id').reset_index(drop=True)
@@ -44,7 +44,7 @@ class Test_Dataset(Dataset):
 
 
 def validate_segmentation(harmonizer_net, source_site='CALTECH', target_site='NYU', num_classes=15):
-    df_root_dir = '../data/'
+    df_root_dir = '../../data/'
     segmentation_net = torch.load(f'../checkpoints/segmentation_network_{source_site}.pkl')
     segmentation_net.eval()
     harmonizer_net.eval()
@@ -99,7 +99,7 @@ def validate_segmentation(harmonizer_net, source_site='CALTECH', target_site='NY
 
             
 def validate_segmentation_base(source_site='CALTECH', target_site='NYU', num_classes=15):
-    df_root_dir = '../data/'
+    df_root_dir = '../../data/'
     segmentation_net = torch.load(f'../checkpoints/segmentation_network_{source_site}.pkl')
     segmentation_net.eval()
     softMax = nn.Softmax(dim=1)
