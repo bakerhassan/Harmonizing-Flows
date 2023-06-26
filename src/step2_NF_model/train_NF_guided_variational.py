@@ -16,7 +16,7 @@ from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.callbacks import Callback
 
 #DataLoader
-from flow_guided_dataloader import MedicalImage2DDataset
+from src.step2_NF_model.flow_guided_dataloader import MedicalImage2DDataset
 
 #NF model
 from NF_model import flow_model
