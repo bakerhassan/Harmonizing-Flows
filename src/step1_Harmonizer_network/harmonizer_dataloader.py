@@ -9,7 +9,7 @@ import nibabel as nib
 from nilearn.image import resample_img, crop_img
 from skimage import transform
 
-from ..globals import globals
+from src.globals import globals
 
 warnings.filterwarnings("ignore")
 

@@ -8,8 +8,7 @@ import torch.optim as optim
 import pytorch_lightning as pl
 
 import numpy as np
-import globals
-
+from src.globals import globals
 
 class ImageFlow(pl.LightningModule):
 
