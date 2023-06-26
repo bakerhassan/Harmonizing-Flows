@@ -3,6 +3,7 @@ import torch
 
 HPC = os.getenv('SLURM_CPUS_ON_NODE') != None
 if HPC:
+    print("I'm on HPC!")
     lustre_path = '/lustre/scratch/bakerh/'
     training_data_location = lustre_path + '/Caltech/derivative/normal/training/'
     validation_data_location = lustre_path + '/Caltech/derivative/normal/validation/'
