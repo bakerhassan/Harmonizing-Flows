@@ -29,8 +29,9 @@ net_harmonizer = torch.load(f'../checkpoints/UNet2D_harmonizer/model/Best_UNet2D
 flow = flow_model(dequant_mode='variational').cuda()
 
 print("Found pretrained model, loading...")
+#TODO this is a dirty fix ...
 ckpt = torch.load(
-    f"../checkpoints/ABIDE-FLOW-{source_site}/ABIDE-Guided-Flow-variational/lightning_logs/version_0/checkpoints/last.ckpt",
+    f"../checkpoints/ABIDE-FLOW-{source_site}/ABIDE-Guided-Flow-variational/lightning_logs/version_18503795/checkpoints/last.ckpt",
     map_location=globals.device)
 flow.load_state_dict(ckpt['state_dict'])
 flow.eval()
