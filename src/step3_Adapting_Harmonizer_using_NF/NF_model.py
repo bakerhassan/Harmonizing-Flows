@@ -22,7 +22,6 @@ class ImageFlow(pl.LightningModule):
             import_samples - Number of importance samples to use during testing (see explanation below). Can be changed at any time
         """
         super().__init__()
-        self.device = globals.device
         self.flows = nn.ModuleList(flows)
         self.import_samples = import_samples
         # Create prior distribution for final latent space
