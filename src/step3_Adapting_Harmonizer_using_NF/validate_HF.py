@@ -46,6 +46,7 @@ optimizer.zero_grad()
 for file in os.listdir(globals.target_data):
     file = os.path.join(globals.target_data, file)
     if os.path.isfile(file):
+        print(file)
         test_set = MedicalImage2DDataset(globals.affine_file, file)
         test_loader = DataLoader(test_set, batch_size=1000, num_workers=4, shuffle=True)
         for i in range(20):
