@@ -25,7 +25,7 @@ target_site = 'healthy'
 
 print(f'source:{source_site}  target:{target_site}')
 
-net_harmonizer = torch.load(f'../checkpoints/UNet2D_harmonizer_{source_site}/model/Best_UNet2D_harmonizer.pkl').cuda()
+net_harmonizer = torch.load(f'../checkpoints/UNet2D_harmonizer/model/Best_UNet2D_harmonizer.pkl').cuda()
 flow = flow_model(dequant_mode='variational').cuda()
 
 print("Found pretrained model, loading...")
