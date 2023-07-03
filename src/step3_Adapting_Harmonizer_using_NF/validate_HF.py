@@ -6,16 +6,16 @@ import nibabel as nib
 import os
 from src.globals import globals
 from pathlib import Path
+from nilearn.image import resample_img
 
 import torch
 from torch.utils.data import DataLoader
 import torch.optim as optim
 
 # DataLoader
-from hf_dataloader import MedicalImage2DDataset
-from nilearn.image import resample_img
-from NF_model import flow_model
-from HF_model import FLow_harmonizer
+from src.step3_Adapting_Harmonizer_using_NF.hf_dataloader import MedicalImage2DDataset
+from src.step3_Adapting_Harmonizer_using_NF.NF_model import flow_model
+from src.step3_Adapting_Harmonizer_using_NF.HF_model import FLow_harmonizer
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
