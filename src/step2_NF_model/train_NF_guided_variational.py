@@ -27,7 +27,6 @@ print("Using device", device)
 
 for site in ['CALTECH']:
     root_dir = '../../data/'
-    df_root_dir = '../../data/'
     CHECKPOINT_PATH = f'../checkpoints/ABIDE-FLOW-{site}'
     print(os.getcwd())
     exit(0)

@@ -19,10 +19,9 @@ class FLow_harmonizer(nn.Module):
         # Create prior distribution for final latent space
         self.prior = torch.distributions.normal.Normal(loc=0.0, scale=1.0)
 
-    def forward(self, imgs, masks):
+    def forward(self, imgs):
         z = self.harmonizer.forward(imgs)
         z = torch.clamp(z, min=0, max=255)
-        z[masks==0] = 0
         ldj = torch.zeros(z.shape[0]).cuda()
         # The forward function is only used for visualizing the graph
         return self._get_likelihood(z, ldj)
