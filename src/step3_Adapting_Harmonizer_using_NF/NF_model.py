@@ -10,7 +10,7 @@ import pytorch_lightning as pl
 
 import numpy as np
 
-
+from src.globals import globals
 
 
 class ImageFlow(pl.LightningModule):
@@ -22,12 +22,11 @@ class ImageFlow(pl.LightningModule):
             import_samples - Number of importance samples to use during testing (see explanation below). Can be changed at any time
         """
         super().__init__()
-        self.device = torch.device("cuda:0")
+        self.device = globals.device
         self.flows = nn.ModuleList(flows)
         self.import_samples = import_samples
         # Create prior distribution for final latent space
         self.prior = torch.distributions.normal.Normal(loc=0.0, scale=1.0)
-
 
     def forward(self, imgs, labels):
         # The forward function is only used for visualizing the graph
@@ -40,7 +39,6 @@ class ImageFlow(pl.LightningModule):
             z, ldj = flow(z, ldj, reverse=False)
         return z, ldj
 
-
     def _get_likelihood(self, imgs, labels, return_ll=False):
         """
         Given a batch of images, return the likelihood of those.
@@ -48,15 +46,14 @@ class ImageFlow(pl.LightningModule):
         Otherwise, the ouptut metric is bits per dimension (scaled negative log likelihood)
         """
         z, ldj = self.encode(imgs)
-        log_pz = self.prior.log_prob(z).sum(dim=[1,2,3])
+        log_pz = self.prior.log_prob(z).sum(dim=[1, 2, 3])
         log_px = ldj + log_pz
         nll = -log_px
         # Calculating bits per dimension
         bpd = nll * np.log2(np.exp(1)) / np.prod(imgs.shape[1:])
-        return torch.clip((bpd*labels), min=-1).mean() if not return_ll else log_px
+        return torch.clip((bpd * labels), min=-1).mean() if not return_ll else log_px
 
-
-    @torch.no_grad()        
+    @torch.no_grad()
     def sample(self, img_shape, z_init=None):
         """
         Sample a batch of images from the flow.
@@ -121,7 +118,6 @@ class Dequantization(nn.Module):
         self.alpha = alpha
         self.quants = quants
 
-
     def forward(self, z, ldj, reverse=False):
         if not reverse:
             z, ldj = self.dequant(z, ldj)
@@ -130,22 +126,20 @@ class Dequantization(nn.Module):
             z, ldj = self.sigmoid(z, ldj, reverse=False)
             z = z * self.quants
             ldj += np.log(self.quants) * np.prod(z.shape[1:])
-            z = torch.floor(z).clamp(min=0, max=self.quants-1).to(torch.int32)
+            z = torch.floor(z).clamp(min=0, max=self.quants - 1).to(torch.int32)
         return z, ldj
-
 
     def sigmoid(self, z, ldj, reverse=False):
         # Applies an invertible sigmoid transformation
         if not reverse:
-            ldj += (-z-2*F.softplus(-z)).sum(dim=[1,2,3])
+            ldj += (-z - 2 * F.softplus(-z)).sum(dim=[1, 2, 3])
             z = torch.sigmoid(z)
         else:
             z = z * (1 - self.alpha) + 0.5 * self.alpha  # Scale to prevent boundaries 0 and 1
             ldj += np.log(1 - self.alpha) * np.prod(z.shape[1:])
-            ldj += (-torch.log(z) - torch.log(1-z)).sum(dim=[1,2,3])
-            z = torch.log(z) - torch.log(1-z)
+            ldj += (-torch.log(z) - torch.log(1 - z)).sum(dim=[1, 2, 3])
+            z = torch.log(z) - torch.log(1 - z)
         return z, ldj
-
 
     def dequant(self, z, ldj):
         # Transform discrete values to continuous volumes
@@ -154,6 +148,7 @@ class Dequantization(nn.Module):
         z = z / self.quants
         ldj -= np.log(self.quants) * np.prod(z.shape[1:])
         return z, ldj
+
 
 class VariationalDequantization(Dequantization):
 
@@ -168,7 +163,7 @@ class VariationalDequantization(Dequantization):
 
     def dequant(self, z, ldj):
         z = z.to(torch.float32)
-        img = (z / 255.0) * 2 - 1 # We condition the flows on x, i.e. the original image
+        img = (z / 255.0) * 2 - 1  # We condition the flows on x, i.e. the original image
 
         # Prior of u is a uniform distribution as before
         # As most flow transformations are defined on [-infinity,+infinity], we apply an inverse sigmoid first.
@@ -182,6 +177,7 @@ class VariationalDequantization(Dequantization):
         z = (z + deq_noise) / 256.0
         ldj -= np.log(256.0) * np.prod(z.shape[1:])
         return z, ldj
+
 
 class CouplingLayer(nn.Module):
 
@@ -233,17 +229,17 @@ class CouplingLayer(nn.Module):
             # Whether we first shift and then scale, or the other way round,
             # is a design choice, and usually does not have a big impact
             z = (z + t) * torch.exp(s)
-            ldj += s.sum(dim=[1,2,3])
+            ldj += s.sum(dim=[1, 2, 3])
         else:
             z = (z * torch.exp(-s)) - t
-            ldj -= s.sum(dim=[1,2,3])
+            ldj -= s.sum(dim=[1, 2, 3])
 
         return z, ldj
 
 
 def create_checkerboard_mask(h, w, invert=False):
-    x, y= torch.arange(h, dtype=torch.int32), torch.arange(w, dtype=torch.int32)
-    xx, yy= torch.meshgrid(x, y)
+    x, y = torch.arange(h, dtype=torch.int32), torch.arange(w, dtype=torch.int32)
+    xx, yy = torch.meshgrid(x, y)
     mask = torch.fmod(xx + yy, 2)
     mask = mask.to(torch.float32).view(1, 1, h, w)
     if invert:
@@ -252,12 +248,13 @@ def create_checkerboard_mask(h, w, invert=False):
 
 
 def create_channel_mask(c_in, invert=False):
-    mask = torch.cat([torch.ones(c_in//2, dtype=torch.float32),
-                    torch.zeros(c_in-c_in//2, dtype=torch.float32)])
+    mask = torch.cat([torch.ones(c_in // 2, dtype=torch.float32),
+                      torch.zeros(c_in - c_in // 2, dtype=torch.float32)])
     mask = mask.view(1, c_in, 1, 1)
     if invert:
         mask = 1 - mask
     return mask
+
 
 class ConcatELU(nn.Module):
     """
@@ -293,62 +290,61 @@ class LayerNormChannels(nn.Module):
 
 def conv_layer(in_channels, out_channels, kernel_size=3):
     return nn.Sequential(
-            ConcatELU(),
-            nn.Conv2d(2*in_channels, out_channels, kernel_size, padding='same'),
-            LayerNormChannels(out_channels)
-        )
+        ConcatELU(),
+        nn.Conv2d(2 * in_channels, out_channels, kernel_size, padding='same'),
+        LayerNormChannels(out_channels)
+    )
 
 
 class UNet(nn.Module):
 
-    def __init__(self, c_in, c_out = None):
+    def __init__(self, c_in, c_out=None):
         super().__init__()
-        
-        num_ch = [16, 32, 48, 64]   
-            
+
+        num_ch = [16, 32, 48, 64]
+
         if c_out == None:
-            c_out = 2*c_in
+            c_out = 2 * c_in
         self.dconv_down1 = conv_layer(c_in, num_ch[0])
         self.dconv_down2 = conv_layer(num_ch[0], num_ch[1])
         self.dconv_down3 = conv_layer(num_ch[1], num_ch[2])
-        self.dconv_down4 = conv_layer(num_ch[2], num_ch[3])     
+        self.dconv_down4 = conv_layer(num_ch[2], num_ch[3])
 
         self.maxpool = nn.MaxPool2d(2)
-        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)        
-        
+        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+
         self.dconv_up3 = conv_layer(num_ch[2] + num_ch[3], num_ch[2])
         self.dconv_up2 = conv_layer(num_ch[1] + num_ch[2], num_ch[1])
         self.dconv_up1 = conv_layer(num_ch[1] + num_ch[0], num_ch[0])
-        
+
         self.conv_last = nn.Conv2d(num_ch[0], c_out, 1)
-        
+
     def forward(self, x):
         conv1 = self.dconv_down1(x)
         x = self.maxpool(conv1)
 
         conv2 = self.dconv_down2(x)
         x = self.maxpool(conv2)
-        
-        conv3 = self.dconv_down3(x)
-        x = self.maxpool(conv3)  
 
-        
+        conv3 = self.dconv_down3(x)
+        x = self.maxpool(conv3)
+
         x = self.dconv_down4(x)
-        x = self.upsample(x)        
+        x = self.upsample(x)
         x = torch.cat([x, conv3], dim=1)
 
         x = self.dconv_up3(x)
-        x = self.upsample(x)        
-        x = torch.cat([x, conv2], dim=1)       
+        x = self.upsample(x)
+        x = torch.cat([x, conv2], dim=1)
 
         x = self.dconv_up2(x)
-        x = self.upsample(x)        
-        x = torch.cat([x, conv1], dim=1)   
-        
+        x = self.upsample(x)
+        x = torch.cat([x, conv1], dim=1)
+
         x = self.dconv_up1(x)
-        
+
         out = self.conv_last(x)
-        
+
         return out
 
 
@@ -358,14 +354,14 @@ class SqueezeFlow(nn.Module):
         B, C, H, W = z.shape
         if not reverse:
             # Forward direction: H x W x C => H/2 x W/2 x 4C
-            z = z.reshape(B, C, H//2, 2, W//2, 2)
+            z = z.reshape(B, C, H // 2, 2, W // 2, 2)
             z = z.permute(0, 1, 3, 5, 2, 4)
-            z = z.reshape(B, 4*C, H//2, W//2)
+            z = z.reshape(B, 4 * C, H // 2, W // 2)
         else:
             # Reverse direction: H/2 x W/2 x 4C => H x W x C
-            z = z.reshape(B, C//4, 2, 2, H, W)
+            z = z.reshape(B, C // 4, 2, 2, H, W)
             z = z.permute(0, 1, 4, 2, 5, 3)
-            z = z.reshape(B, C//4, H*2, W*2)
+            z = z.reshape(B, C // 4, H * 2, W * 2)
         return z, ldj
 
 
@@ -378,14 +374,12 @@ class SplitFlow(nn.Module):
     def forward(self, z, ldj, reverse=False):
         if not reverse:
             z, z_split = z.chunk(2, dim=1)
-            ldj += self.prior.log_prob(z_split).sum(dim=[1,2,3])
+            ldj += self.prior.log_prob(z_split).sum(dim=[1, 2, 3])
         else:
             z_split = self.prior.sample(sample_shape=z.shape).to(device)
             z = torch.cat([z, z_split], dim=1)
-            ldj -= self.prior.log_prob(z_split).sum(dim=[1,2,3])
+            ldj -= self.prior.log_prob(z_split).sum(dim=[1, 2, 3])
         return z, ldj
-
-
 
 
 def create_multiscale_flow_variational():
@@ -393,26 +387,25 @@ def create_multiscale_flow_variational():
     flow_layers = []
 
     vardeq_layers = [CouplingLayer(network=UNet(2, c_out=2),
-                                    mask=create_checkerboard_mask(h=224, w=224, invert=(i%2==1)),
-                                    c_in=1) for i in range(4)]
+                                   mask=create_checkerboard_mask(h=224, w=224, invert=(i % 2 == 1)),
+                                   c_in=1) for i in range(4)]
     flow_layers += [VariationalDequantization(vardeq_layers)]
-    #flow_layers += [Dequantization()]
-
+    # flow_layers += [Dequantization()]
 
     flow_layers += [CouplingLayer(network=UNet(1),
-                                mask=create_checkerboard_mask(h=224, w=224, invert=(i%2==1)),
-                                c_in=1) for i in range(4)]
+                                  mask=create_checkerboard_mask(h=224, w=224, invert=(i % 2 == 1)),
+                                  c_in=1) for i in range(4)]
     flow_layers += [SqueezeFlow()]
     for i in range(4):
         flow_layers += [CouplingLayer(network=UNet(4),
-                                    mask=create_channel_mask(c_in=4, invert=(i%2==1)),
-                                    c_in=4)]
+                                      mask=create_channel_mask(c_in=4, invert=(i % 2 == 1)),
+                                      c_in=4)]
     flow_layers += [SqueezeFlow()]
-    for i in range(4): #for dim=96 I used 2 and for 32 used 4
-    #for i in range(2):
+    for i in range(4):  # for dim=96 I used 2 and for 32 used 4
+        # for i in range(2):
         flow_layers += [CouplingLayer(network=UNet(16),
-                                    mask=create_channel_mask(c_in=16, invert=(i%2==1)),
-                                    c_in=16)]
+                                      mask=create_channel_mask(c_in=16, invert=(i % 2 == 1)),
+                                      c_in=16)]
 
     flow_model = ImageFlow(flow_layers).to(device)
     return flow_model
@@ -428,24 +421,24 @@ def create_multiscale_flow_sigmoid():
     # flow_layers += [VariationalDequantization(vardeq_layers)]
     flow_layers += [Dequantization()]
 
-
     flow_layers += [CouplingLayer(network=UNet(1),
-                                mask=create_checkerboard_mask(h=224, w=224, invert=(i%2==1)),
-                                c_in=1) for i in range(4)]
+                                  mask=create_checkerboard_mask(h=224, w=224, invert=(i % 2 == 1)),
+                                  c_in=1) for i in range(4)]
     flow_layers += [SqueezeFlow()]
     for i in range(4):
         flow_layers += [CouplingLayer(network=UNet(4),
-                                    mask=create_channel_mask(c_in=4, invert=(i%2==1)),
-                                    c_in=4)]
+                                      mask=create_channel_mask(c_in=4, invert=(i % 2 == 1)),
+                                      c_in=4)]
     flow_layers += [SqueezeFlow()]
-    for i in range(4): #for dim=96 I used 2 and for 32 used 4
-    #for i in range(2):
+    for i in range(4):  # for dim=96 I used 2 and for 32 used 4
+        # for i in range(2):
         flow_layers += [CouplingLayer(network=UNet(16),
-                                    mask=create_channel_mask(c_in=16, invert=(i%2==1)),
-                                    c_in=16)]
+                                      mask=create_channel_mask(c_in=16, invert=(i % 2 == 1)),
+                                      c_in=16)]
 
     flow_model = ImageFlow(flow_layers).to(device)
     return flow_model
+
 
 def flow_model(dequant_mode='variational'):
     if dequant_mode == 'variational':
