@@ -25,7 +25,7 @@ from src.step2_NF_model.NF_model import flow_model
 device = globals.device
 print("Using device", device)
 
-for site in ['CALTECH', 'KKI', 'PITT', 'NYU']:
+for site in ['CALTECH']:
     root_dir = '../../data/'
     df_root_dir = '../../data/'
     CHECKPOINT_PATH = f'../checkpoints/ABIDE-FLOW-{site}'
@@ -45,7 +45,7 @@ for site in ['CALTECH', 'KKI', 'PITT', 'NYU']:
     def train_flow(flow, model_name="ABIDE-Guided-Flow-variational"):
         # Create a PyTorch Lightning trainer
         trainer = pl.Trainer(default_root_dir=os.path.join(CHECKPOINT_PATH, model_name),
-                             max_epochs=1600,
+                             max_epochs=2,
                              gradient_clip_val=1.0,
                              callbacks=[PrintCallback(),
                                         ModelCheckpoint(save_weights_only=True, save_top_k=-1, every_n_epochs=250,
