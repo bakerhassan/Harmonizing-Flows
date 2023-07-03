@@ -32,7 +32,7 @@ class MedicalImage2DDataset(Dataset):
         self.items = self.get_slices(file_path, affine_dir)
 
     def get_info(self):
-        if self.affine == None or self.original_shape == None:
+        if self.affine is None or self.original_shape is None:
             raise RuntimeError(f'affine and original shape has to be set before calling this function')
         return self.affine,self.original_shape
 
@@ -42,15 +42,14 @@ class MedicalImage2DDataset(Dataset):
         if file_path.endswith('.nii') or file_path.endswith('.nii.gz'):
             # Load the NIfTI image
             img = nib.squeeze_image(nib.load(file_path))
-            self.original_shape = img.shape
             affine_matrix[:, -1] = img.affine[:, -1]
-            self.affine = affine_matrix
             # Resample the image using the given affine transformation
             resampled_img = resample_img(img, target_affine=affine_matrix, interpolation='nearest')
 
             # Crop the image based on non-empty voxels
             cropped_img = crop_img(resampled_img)
-
+            self.original_shape = img.shape
+            self.affine = resampled_img.affine
             slices.extend(np.split(cropped_img.get_fdata(), cropped_img.shape[-1], axis=-1))
 
         return slices
