@@ -29,7 +29,8 @@ for site in ['CALTECH']:
     root_dir = '../../data/'
     df_root_dir = '../../data/'
     CHECKPOINT_PATH = f'../checkpoints/ABIDE-FLOW-{site}'
-
+    print(os.getcwd())
+    exit(0)
     train_set = MedicalImage2DDataset('train', globals.affine_file, globals.training_data_location)
     train_loader = DataLoader(train_set, batch_size=32, shuffle=True)
 
