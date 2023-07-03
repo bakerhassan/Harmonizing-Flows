@@ -27,9 +27,9 @@ class MedicalImage2DDataset(Dataset):
     def __init__(self, affine_dir, file_path, normalization=None):
         self.normalization = normalization
         self.root_dir = file_path
-        self.items = self.get_slices(file_path, affine_dir)
         self.affine = None
         self.original_shape = None
+        self.items = self.get_slices(file_path, affine_dir)
 
     def get_info(self):
         if self.affine == None or self.original_shape == None:
@@ -42,9 +42,9 @@ class MedicalImage2DDataset(Dataset):
         if file_path.endswith('.nii') or file_path.endswith('.nii.gz'):
             # Load the NIfTI image
             img = nib.squeeze_image(nib.load(file_path))
-            self.affine = img.affine
             self.original_shape = img.shape
             affine_matrix[:, -1] = img.affine[:, -1]
+            self.affine = affine_matrix
             # Resample the image using the given affine transformation
             resampled_img = resample_img(img, target_affine=affine_matrix, interpolation='nearest')
 

@@ -48,7 +48,7 @@ for file in os.listdir(globals.target_data):
     if os.path.isfile(file):
         print(file)
         test_set = MedicalImage2DDataset(globals.affine_file, file)
-        test_loader = DataLoader(test_set, batch_size=1000, num_workers=4, shuffle=True)
+        test_loader = DataLoader(test_set, batch_size=1000, num_workers=4, shuffle=False)
         for i in range(20):
             bpds = []
             for batch_idx, data in enumerate(test_loader):
@@ -60,13 +60,13 @@ for file in os.listdir(globals.target_data):
                 optimizer.step()
                 model.zero_grad()
                 optimizer.zero_grad()
-        with torch.no_grad:
+        harmonized_data = []
+        with torch.no_grad():
             for batch_idx, data in enumerate(test_loader):
-                # I assume in this loop the whole image will be loaded at once
-                harmonized_data = net_harmonizer(data)
-
-        harmonized_data = harmonized_data.numpy()
+                harmonized_data.extend(net_harmonizer(data))
+        harmonized_data = torch.concat(harmonized_data)
+        harmonized_data = harmonized_data.cpu().numpy()
         affine, original_shape = test_set.get_info()
         image = nib.Nifti1Image(harmonized_data, affine)
         resampled_img = resample_img(image, target_affine=affine, target_shape=original_shape, interpolation='nearest')
-        nib.save(resampled_img, globals.harmonized_results_path)
+        nib.save(resampled_img, globals.harmonized_results_path + file.split("/")[-1])
