@@ -38,6 +38,9 @@ flow.eval()
 print('flow model loaded')
 
 model = FLow_harmonizer(flow, net_harmonizer)
+for param in model.flows.parameters():
+    param.requires_grad = False
+model.flows.eval()
 root_dir = '../../data/'
 
 optimizer = optim.Adam(model.harmonizer.parameters(), lr=4e-6)
@@ -66,7 +69,6 @@ for file in os.listdir(globals.target_data):
                 harmonized_data.extend(net_harmonizer(data))
         harmonized_data = torch.concat(harmonized_data)
         harmonized_data = harmonized_data.cpu().numpy()
-        affine, original_shape = test_set.get_info()
+        affine, _ = test_set.get_info()
         image = nib.Nifti1Image(harmonized_data, affine)
-        resampled_img = resample_img(image, target_affine=affine, target_shape=original_shape, interpolation='nearest')
-        nib.save(resampled_img, globals.harmonized_results_path + file.split("/")[-1])
+        nib.save(image, globals.harmonized_results_path + file.split("/")[-1])
