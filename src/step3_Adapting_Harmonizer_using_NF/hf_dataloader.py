@@ -34,12 +34,13 @@ class MedicalImage2DDataset(Dataset):
     def get_info(self):
         if self.affine is None or self.original_shape is None:
             raise RuntimeError(f'affine and original shape has to be set before calling this function')
-        return self.affine,self.original_shape
+        return self.affine, self.original_shape
 
     def get_slices(self, file_path, affine_dir):
         slices = []
         affine_matrix = np.load(affine_dir)
-        if file_path.endswith('.nii') or file_path.endswith('.nii.gz'):
+        if file_path.endswith('.nii') or file_path.endswith('.nii.gz') and (
+                not file_path.endswith('seg.nii.gz') or not file_path.endswith('seg.nii')):
             # Load the NIfTI image
             img = nib.squeeze_image(nib.load(file_path))
             affine_matrix[:, -1] = img.affine[:, -1]
