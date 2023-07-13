@@ -40,7 +40,7 @@ class MedicalImage2DDataset(Dataset):
         slices = []
         affine_matrix = np.load(affine_dir)
         if file_path.endswith('.nii') or file_path.endswith('.nii.gz') and (
-                not file_path.endswith('seg.nii.gz') or not file_path.endswith('seg.nii')):
+                not file_path.endswith('seg.nii.gz') and not file_path.endswith('seg.nii')):
             # Load the NIfTI image
             img = nib.squeeze_image(nib.load(file_path))
             affine_matrix[:, -1] = img.affine[:, -1]
