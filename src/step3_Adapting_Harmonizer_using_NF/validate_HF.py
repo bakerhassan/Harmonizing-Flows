@@ -54,8 +54,7 @@ for file in os.listdir(globals.target_data):
             continue
         print(file)
         test_set = MedicalImage2DDataset(globals.affine_file, file)
-        test_loader = DataLoader(test_set, batch_size=1000, num_workers=4, shuffle=False)
-        print(test_loader.batch_size)
+        test_loader = DataLoader(test_set, batch_size=512, num_workers=4, shuffle=False)
         for i in range(20):
             bpds = []
             for batch_idx, data in enumerate(test_loader):
