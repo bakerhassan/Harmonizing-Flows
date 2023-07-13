@@ -29,7 +29,7 @@ net_harmonizer = torch.load(f'../checkpoints/UNet2D_harmonizer/model/Best_UNet2D
 flow = flow_model(dequant_mode='variational').cuda()
 
 print("Found pretrained model, loading...")
-#TODO this is a dirty fix ...
+# TODO this is a dirty fix ...
 ckpt = torch.load(
     f"../checkpoints/ABIDE-FLOW-{source_site}/ABIDE-Guided-Flow-variational/lightning_logs/version_18503795/checkpoints/last.ckpt",
     map_location=globals.device)
@@ -49,6 +49,9 @@ optimizer.zero_grad()
 for file in os.listdir(globals.target_data):
     file = os.path.join(globals.target_data, file)
     if os.path.isfile(file):
+        if not file.endswith('.nii') and not file.endswith('.nii.gz') and (
+                file.endswith('seg.nii.gz') or file.endswith('seg.nii')):
+            continue
         print(file)
         test_set = MedicalImage2DDataset(globals.affine_file, file)
         test_loader = DataLoader(test_set, batch_size=1000, num_workers=4, shuffle=False)
