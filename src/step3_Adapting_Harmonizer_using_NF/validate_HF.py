@@ -25,41 +25,51 @@ target_site = 'healthy'
 
 print(f'source:{source_site}  target:{target_site}')
 
-net_harmonizer = torch.load(f'../checkpoints/UNet2D_harmonizer/model/Best_UNet2D_harmonizer.pkl').cuda()
+#net_harmonizer = torch.load(f'../checkpoints/UNet2D_harmonizer/model/Best_UNet2D_harmonizer.pkl').cuda()
 flow = flow_model(dequant_mode='variational').cuda()
 
 print("Found pretrained model, loading...")
 # TODO this is a dirty fix ...
 ckpt = torch.load(
-    f"../checkpoints/ABIDE-FLOW-{source_site}/ABIDE-Guided-Flow-variational/lightning_logs/version_18503795/checkpoints/last.ckpt",
+    f"../checkpoints/ABIDE-FLOW-{source_site}/ABIDE-Guided-Flow-variational/lightning_logs/version_19048338/checkpoints/last.ckpt",
     map_location=globals.device)
 flow.load_state_dict(ckpt['state_dict'])
 flow.eval()
 print('flow model loaded')
 
-model = FLow_harmonizer(flow, net_harmonizer)
-for param in model.flows.parameters():
-    param.requires_grad = False
-model.flows.eval()
-root_dir = '../../data/'
-
-optimizer = optim.Adam(model.harmonizer.parameters(), lr=4e-6)
-model.zero_grad()
-optimizer.zero_grad()
+#model = FLow_harmonizer(flow, net_harmonizer).to(globals.device)
+#for param in model.flows.parameters():
+#    param.requires_grad = False
+#model.flows.eval()
+#root_dir = '../../data/'
+#optimizer = optim.Adam(model.harmonizer.parameters(), lr=4e-6)
+#model.zero_grad()
+#optimizer.zero_grad()
 for file in os.listdir(globals.target_data):
     file = os.path.join(globals.target_data, file)
     if os.path.isfile(file):
-        if not file.endswith('.nii') and not file.endswith('.nii.gz') and (
+        if not file.endswith('.nii') and not file.endswith('.nii.gz') or (
                 file.endswith('seg.nii.gz') or file.endswith('seg.nii')):
             continue
         print(file)
         test_set = MedicalImage2DDataset(globals.affine_file, file)
-        test_loader = DataLoader(test_set, batch_size=128, num_workers=4, shuffle=False)
+        test_loader = DataLoader(test_set, batch_size=20, shuffle=False)
+        net_harmonizer = torch.load(f'../checkpoints/UNet2D_harmonizer/model/Best_UNet2D_harmonizer.pkl').cuda()
+
+        model = FLow_harmonizer(flow, net_harmonizer).cuda()
+        for param in model.flows.parameters():
+            param.requires_grad = False
+        model.flows.eval()
+        root_dir = '../../data/'
+
+        optimizer = optim.Adam(model.harmonizer.parameters(), lr=4e-6)
+        model.zero_grad()
+        optimizer.zero_grad()
         for i in range(20):
             bpds = []
             for batch_idx, data in enumerate(test_loader):
-                img = data
-                bpd = model(Variable(img).cuda())
+                img = data.to(globals.device)
+                bpd = model(Variable(img))
                 loss = bpd.mean()
                 bpds.append(bpd.data.detach().cpu().numpy())
                 loss.backward()
@@ -75,3 +85,5 @@ for file in os.listdir(globals.target_data):
         affine, _ = test_set.get_info()
         image = nib.Nifti1Image(harmonized_data, affine)
         nib.save(image, globals.harmonized_results_path + file.split("/")[-1])
+        del model
+        del optimizer

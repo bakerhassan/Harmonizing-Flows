@@ -86,11 +86,10 @@ class MedicalImage2DDataset(Dataset):
                     img2 = self.new_map()[img]
                 else:
                     img2 = self.aug(image=img)
-                    img2 = np.clip(img, 0, 255).astype(np.uint8)
-                    img2 = self.new_map()[img]
-                # if (np.mean(np.abs(img - img2)) + 2 * np.std(img - img2)) > 20:
-                img2 = self.transform_volume(img2.astype(np.float32))
-                return [img2, -1]
+                    img2 = np.clip(img2, 0, 255).astype(np.uint8)
+                if (np.mean(np.abs(img - img2)) + 2 * np.std(img - img2)) > 20:
+                    img2 = self.transform_volume(img2.astype(np.float32))
+                    return [img2, -1]
         elif self.mode == 'val':
             if index % 5 == 0:
                 rnd = np.random.random()

@@ -28,8 +28,6 @@ print("Using device", device)
 for site in ['CALTECH']:
     root_dir = '../../data/'
     CHECKPOINT_PATH = f'../checkpoints/ABIDE-FLOW-{site}'
-    print(os.getcwd())
-    exit(0)
     train_set = MedicalImage2DDataset('train', globals.affine_file, globals.training_data_location)
     train_loader = DataLoader(train_set, batch_size=32, shuffle=True)
 
@@ -45,7 +43,7 @@ for site in ['CALTECH']:
     def train_flow(flow, model_name="ABIDE-Guided-Flow-variational"):
         # Create a PyTorch Lightning trainer
         trainer = pl.Trainer(default_root_dir=os.path.join(CHECKPOINT_PATH, model_name),
-                             max_epochs=2,
+                             max_epochs=1600,
                              gradient_clip_val=1.0,
                              callbacks=[PrintCallback(),
                                         ModelCheckpoint(save_weights_only=True, save_top_k=-1, every_n_epochs=250,
